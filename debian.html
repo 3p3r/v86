@@ -1,0 +1,42 @@
+<script src="build/libv86.js"></script>
+<script>
+window.onload = function() {
+  const emulator = window.emulator = new V86Starter({
+    wasm_path: "build/v86.wasm",
+    screen_container: document.getElementById("screen_container"),
+    bios: { url: "bios/seabios.bin" },
+    vga_bios: { url: "bios/vgabios.bin" },
+    autostart: true,
+    memory_size: 512 * 1024 * 1024,
+    vga_memory_size: 8 * 1024 * 1024,
+    network_relay_url: "wss://relay.widgetry.org/",
+    bzimage_initrd_from_filesystem: true,
+    cmdline: "rw init=/bin/systemd root=host9p console=ttyS0 spectre_v2=off pti=off",
+    filesystem: {
+        basefs: {
+            url: "images/debian-base-fs.json",
+        },
+        baseurl: "images/debian-9p-rootfs-flat/",
+    },
+  });
+
+  let buff = "";
+  emulator.add_listener("serial0-output-char", function(char) {
+    if (char === "\r") return;
+    if (char === "\n") { buff = console.log(buff); }
+    buff += char;
+  });
+
+  fetch("images/debian-state-base.bin")
+    .then(res => res.arrayBuffer())
+    .then(out => {
+      emulator.restore_state(out);
+      emulator.run();
+      emulator.serial0_send("hwclock --hctosys \n")
+    });
+}
+</script>
+<div id="screen_container">
+    <div style="white-space: pre; font: 14px monospace; line-height: 14px"></div>
+    <canvas style="display: none"></canvas>
+</div>

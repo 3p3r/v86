@@ -11,6 +11,7 @@ docker build . --rm --tag "$IMAGE_NAME"
 docker rm "$CONTAINER_NAME" || true
 docker create -t -i --name "$CONTAINER_NAME" "$IMAGE_NAME" bash
 
+mkdir -p $(dirname "$0")/../../../images
 docker export "$CONTAINER_NAME" > "$OUT_ROOTFS_TAR"
 
 $(dirname "$0")/../../../tools/fs2json.py --out "$OUT_FSJSON" "$OUT_ROOTFS_TAR"
